@@ -12,7 +12,7 @@ def connect_db():
         conn = psycopg2.connect(
             dbname="student_tracker_db",
             user="atharva",
-            password="Vijaya@2413",
+            password="Atharva123",
             host="localhost",
             port="5432"
         )

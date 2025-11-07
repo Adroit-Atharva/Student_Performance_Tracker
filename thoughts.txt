@@ -1,0 +1,21 @@
+1. who interacts with the system?
+	student:- yes(for checking displayed reports of their performance and adding courses, deleting courses,etc)
+	teachers:- yes(for checking performances of the students enrolled for their particular course, as in the performance of the students for the course that teacher teaches)
+	admins:- (don't understand their roles for any system)
+	operator:- don't need them. (students and teachers can do that)
+
+2. main goal?
+	to manage academic records records of the students and based on those records we can track their performances
+
+3. performace metrics:- total number of assignments completed on time, marks for the assignments and internal and external tests, and the attendance of the student.
+
+4. Analysis Depth:- just show averages and trends, and also make insights (like “top-performing students,” “weak areas per subject,” etc.)
+
+5. Scope Boundary:- only one semester for now, may proceed with multiple semester in the foreseeable future
+
+6. persistence and access:- if it is easy to export to such formats then sure. but for now let's just use postgres as our main datastore 
+
+7. CLI behaviour:- 
+	menu driven or command-driven (one is more user-friendly and the other is more soffisticated), 
+	also i was wondering if i should use cpp for this instead of python.
+	i chose python cause it could be used on backend, but for the CLI cpp seems more appropriate

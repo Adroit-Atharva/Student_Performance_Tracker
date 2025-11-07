@@ -5,84 +5,271 @@ from app.utils.db import connect_db
 from app.controllers import student_controller, teacher_controller, admin_controller
 import psycopg2
 from psycopg2 import sql
+import re
+from psycopg2 import sql
 
 def signup_screen(conn):
     cursor = conn.cursor()
+    print("\n=== Sign Up ===")
 
-    role = input("Enter your role (student/teacher): ").strip().lower()
-    user_id = input("Enter a unique numeric ID: ").strip()
+    # --- ROLE SELECTION ---
+    while True:
+        role = input("Enter your role (student/teacher): ").strip().lower()
+        if role in ("student", "teacher"):
+            break
+        print("❌ Invalid role! Please enter either 'student' or 'teacher'.")
 
-    # Ensure ID is numeric
-    if not user_id.isdigit():
-        print("❌ ID must be numeric.")
-        return None, None, None
-
+    # --- UNIQUE NUMERIC ID ---
     table = "students" if role == "student" else "teachers"
     id_column = "student_id" if role == "student" else "teacher_id"
 
-    # Check if the ID already exists
-    cursor.execute(sql.SQL("SELECT 1 FROM {} WHERE {} = %s;").format(
-        sql.Identifier(table), sql.Identifier(id_column)
-    ), [user_id])
-    if cursor.fetchone():
-        print("❌ That ID is already taken. Please choose another one.")
-        return None, None, None
+    while True:
+        user_id = input("Enter a unique numeric ID: ").strip()
+        if not user_id.isdigit():
+            print("❌ ID must be numeric.")
+            continue
 
-    # Gather other details
-    name = input("Enter your full name: ").strip()
-    email = input("Enter your email: ").strip()
-    password = input("Enter your password: ").strip()
+        cursor.execute(
+            sql.SQL("SELECT 1 FROM {} WHERE {} = %s;").format(
+                sql.Identifier(table), sql.Identifier(id_column)
+            ),
+            [user_id],
+        )
+        if cursor.fetchone():
+            print("❌ That ID is already taken. Please choose another one.")
+        else:
+            break
 
-    # Optional fields
-    semester = 1
-    department = None
+    # --- NAME ---
+    while True:
+        name = input("Enter your full name: ").strip()
+        if len(name) < 3:
+            print("❌ Name must be at least 3 characters long.")
+        else:
+            break
+
+    # --- EMAIL ---
+    while True:
+        email = input("Enter your email: ").strip().lower()
+        if not re.match(r"^[\w\.-]+@[\w\.-]+\.\w+$", email):
+            print("❌ Invalid email format.")
+            continue
+
+        cursor.execute(
+            sql.SQL("SELECT 1 FROM {} WHERE email = %s;").format(
+                sql.Identifier(table)
+            ),
+            [email],
+        )
+        if cursor.fetchone():
+            print("❌ That email is already registered. Try another.")
+        else:
+            break
+
+    # --- PASSWORD ---
+    while True:
+        password = input("Enter your password (min 6 chars): ").strip()
+        if len(password) < 6:
+            print("❌ Password must be at least 6 characters long.")
+        else:
+            confirm = input("Re-enter your password: ").strip()
+            if confirm != password:
+                print("❌ Passwords do not match. Try again.")
+            else:
+                break
+
+    # --- ROLE-SPECIFIC FIELDS ---
     if role == "student":
-        semester = int(input("Enter your current semester (1–4): ").strip())
+        while True:
+            try:
+                semester = int(input("Enter your current semester (1–4): ").strip())
+                if 1 <= semester <= 4:
+                    break
+                else:
+                    print("❌ Semester must be between 1 and 4.")
+            except ValueError:
+                print("❌ Please enter a valid number for semester.")
+
         cursor.execute(
             "INSERT INTO students (student_id, name, email, password, semester) VALUES (%s, %s, %s, %s, %s);",
-            (user_id, name, email, password, semester)
+            (user_id, name, email, password, semester),
         )
+
     elif role == "teacher":
-        department = input("Enter your department: ").strip()
+        while True:
+            department = input("Enter your department: ").strip()
+            if department:
+                break
+            print("❌ Department cannot be empty.")
+
         cursor.execute(
             "INSERT INTO teachers (teacher_id, name, email, password, department) VALUES (%s, %s, %s, %s, %s);",
-            (user_id, name, email, password, department)
+            (user_id, name, email, password, department),
         )
-    else:
-        print("❌ Invalid role. Signup cancelled.")
-        return None, None, None
 
     conn.commit()
     print(f"\n✅ {role.capitalize()} {name} registered successfully with ID: {user_id}")
     return user_id, password, role
 
+import re
+from psycopg2 import sql
+
+def signup_screen(conn):
+    cursor = conn.cursor()
+    print("\n=== Sign Up ===")
+
+    # --- ROLE SELECTION ---
+    while True:
+        role = input("Enter your role (student/teacher): ").strip().lower()
+        if role in ("student", "teacher"):
+            break
+        print("❌ Invalid role! Please enter either 'student' or 'teacher'.")
+
+    # --- UNIQUE NUMERIC ID ---
+    table = "students" if role == "student" else "teachers"
+    id_column = "student_id" if role == "student" else "teacher_id"
+
+    while True:
+        user_id = input("Enter a unique numeric ID: ").strip()
+        if not user_id.isdigit():
+            print("❌ ID must be numeric.")
+            continue
+
+        cursor.execute(
+            sql.SQL("SELECT 1 FROM {} WHERE {} = %s;").format(
+                sql.Identifier(table), sql.Identifier(id_column)
+            ),
+            [user_id],
+        )
+        if cursor.fetchone():
+            print("❌ That ID is already taken. Please choose another one.")
+        else:
+            break
+
+    # --- NAME ---
+    while True:
+        name = input("Enter your full name: ").strip()
+        if len(name) < 3:
+            print("❌ Name must be at least 3 characters long.")
+        else:
+            break
+
+    # --- EMAIL ---
+    while True:
+        email = input("Enter your email: ").strip().lower()
+        if not re.match(r"^[\w\.-]+@[\w\.-]+\.\w+$", email):
+            print("❌ Invalid email format.")
+            continue
+
+        cursor.execute(
+            sql.SQL("SELECT 1 FROM {} WHERE email = %s;").format(
+                sql.Identifier(table)
+            ),
+            [email],
+        )
+        if cursor.fetchone():
+            print("❌ That email is already registered. Try another.")
+        else:
+            break
+
+    # --- PASSWORD ---
+    while True:
+        password = input("Enter your password (min 6 chars): ").strip()
+        if len(password) < 6:
+            print("❌ Password must be at least 6 characters long.")
+        else:
+            confirm = input("Re-enter your password: ").strip()
+            if confirm != password:
+                print("❌ Passwords do not match. Try again.")
+            else:
+                break
+
+    # --- ROLE-SPECIFIC FIELDS ---
+    if role == "student":
+        while True:
+            try:
+                semester = int(input("Enter your current semester (1–4): ").strip())
+                if 1 <= semester <= 4:
+                    break
+                else:
+                    print("❌ Semester must be between 1 and 4.")
+            except ValueError:
+                print("❌ Please enter a valid number for semester.")
+
+        cursor.execute(
+            "INSERT INTO students (student_id, name, email, password, semester) VALUES (%s, %s, %s, %s, %s);",
+            (user_id, name, email, password, semester),
+        )
+
+    elif role == "teacher":
+        while True:
+            department = input("Enter your department: ").strip()
+            if department:
+                break
+            print("❌ Department cannot be empty.")
+
+        cursor.execute(
+            "INSERT INTO teachers (teacher_id, name, email, password, department) VALUES (%s, %s, %s, %s, %s);",
+            (user_id, name, email, password, department),
+        )
+
+    conn.commit()
+    print(f"\n✅ {role.capitalize()} {name} registered successfully with ID: {user_id}")
+    return user_id, password, role
+
+import re
 
 def login_screen(conn):
     print("\n=== Login ===")
-    role = input("Enter your role (student/teacher/admin): ").strip().lower()
-    email = input("Enter your email: ").strip()
-    password = input("Enter your password: ").strip()
-
     cursor = conn.cursor()
 
+    # --- ROLE VALIDATION ---
+    while True:
+        role = input("Enter your role (student/teacher/admin): ").strip().lower()
+        if role in ("student", "teacher", "admin"):
+            break
+        print("❌ Invalid role! Please enter either 'student', 'teacher', or 'admin'.")
+
+    # --- EMAIL VALIDATION ---
+    while True:
+        email = input("Enter your email: ").strip().lower()
+        if not re.match(r"^[\w\.-]+@[\w\.-]+\.\w+$", email):
+            print("❌ Invalid email format. Please try again.")
+        else:
+            break
+
+    # --- PASSWORD VALIDATION ---
+    while True:
+        password = input("Enter your password: ").strip()
+        if len(password) < 6:
+            print("❌ Password must be at least 6 characters long.")
+        else:
+            break
+
+    # --- ROLE-BASED AUTHENTICATION ---
     if role == "student":
-        cursor.execute("SELECT student_id FROM students WHERE email=%s AND password=%s", (email, password))
+        cursor.execute("SELECT student_id FROM students WHERE email=%s AND password=%s;", (email, password))
         record = cursor.fetchone()
         if record:
+            print(f"✅ Login successful! Welcome Student {record[0]}.")
             return record[0], role
+
     elif role == "teacher":
-        cursor.execute("SELECT teacher_id FROM teachers WHERE email=%s AND password=%s", (email, password))
+        cursor.execute("SELECT teacher_id FROM teachers WHERE email=%s AND password=%s;", (email, password))
         record = cursor.fetchone()
         if record:
+            print(f"✅ Login successful! Welcome Teacher {record[0]}.")
             return record[0], role
+
     elif role == "admin":
-        # temporary static admin login
-        if email == "admin@tracker.com" and password == "admin123":
+        # Static admin credentials for now
+        if email == "birajdaratharva@gmail.com" and password == "admin123":
+            print("✅ Welcome Admin!")
             return 0, "admin"
 
-    print("❌ Invalid credentials or role.")
+    # --- INVALID CREDENTIALS HANDLING ---
+    print("❌ Invalid credentials or role. Please try again.\n")
     return None
-
 
 def route_to_role(role, user_id):
     if role == "student":

@@ -1,0 +1,29 @@
+functional requirments:-
+    -User Management: Add, update, delete students and courses; Assign students to courses
+    -Performance Tracking: Record marks/grades; View individual and course performance
+    -Data Analysis & Reports: Generate student-wise and course-wise reports; Basic visualization
+    with matplotlib
+    -CLI Interface: Menu-driven CLI with commands for add/search/update/report generation
+
+
+students:-
+    -can apply for 6 courses
+    -view the courses they are enrolled in and the status of their courses, i.e if the course they have applied 
+        for has been alloted to them by the admin. the stauts includes:-rejected, accepted and pending status
+    -after enrolling(i.e applying and then getting accepted). the students can start tracking their 
+        performances for the courses they have enrolled in.
+    -can apply for courses during certain period
+    
+admin:-
+    -approve the applications of students into courses
+    -add courses for the departments
+    -assign teachers to the courses
+
+teachers:-
+    -view students records for their course
+    -see the trends of the students for their course
+    -download the records in pdf and exel formats or text file
+    -
+
+system:-
+    -automatically generate unique id's for the users during the signup
