@@ -1,16 +1,21 @@
 # app/main.py
 
 import sys
-from app.utils.db import connect_db
-from app.controllers import student_controller, teacher_controller, admin_controller
+import re
 import psycopg2
 from psycopg2 import sql
-import re
-from psycopg2 import sql
+from app.utils.db import connect_db
+from app.controllers import student_controller, teacher_controller
+from app.controllers.admin_controller import dashboard
+from app.utils.id_generator import generate_student_id, generate_teacher_id
 
+
+# ==============================
+#  SIGN-UP SCREEN
+# ==============================
 def signup_screen(conn):
     cursor = conn.cursor()
-    print("\n=== Sign Up ===")
+    print("\n=== ✨ Sign Up ===")
 
     # --- ROLE SELECTION ---
     while True:
@@ -18,27 +23,6 @@ def signup_screen(conn):
         if role in ("student", "teacher"):
             break
         print("❌ Invalid role! Please enter either 'student' or 'teacher'.")
-
-    # --- UNIQUE NUMERIC ID ---
-    table = "students" if role == "student" else "teachers"
-    id_column = "student_id" if role == "student" else "teacher_id"
-
-    while True:
-        user_id = input("Enter a unique numeric ID: ").strip()
-        if not user_id.isdigit():
-            print("❌ ID must be numeric.")
-            continue
-
-        cursor.execute(
-            sql.SQL("SELECT 1 FROM {} WHERE {} = %s;").format(
-                sql.Identifier(table), sql.Identifier(id_column)
-            ),
-            [user_id],
-        )
-        if cursor.fetchone():
-            print("❌ That ID is already taken. Please choose another one.")
-        else:
-            break
 
     # --- NAME ---
     while True:
@@ -49,6 +33,9 @@ def signup_screen(conn):
             break
 
     # --- EMAIL ---
+    table = "students" if role == "student" else "teachers"
+    id_column = "student_id" if role == "student" else "teacher_id"
+
     while True:
         email = input("Enter your email: ").strip().lower()
         if not re.match(r"^[\w\.-]+@[\w\.-]+\.\w+$", email):
@@ -56,9 +43,7 @@ def signup_screen(conn):
             continue
 
         cursor.execute(
-            sql.SQL("SELECT 1 FROM {} WHERE email = %s;").format(
-                sql.Identifier(table)
-            ),
+            sql.SQL("SELECT 1 FROM {} WHERE email = %s;").format(sql.Identifier(table)),
             [email],
         )
         if cursor.fetchone():
@@ -71,14 +56,31 @@ def signup_screen(conn):
         password = input("Enter your password (min 6 chars): ").strip()
         if len(password) < 6:
             print("❌ Password must be at least 6 characters long.")
+            continue
+        confirm = input("Re-enter your password: ").strip()
+        if confirm != password:
+            print("❌ Passwords do not match. Try again.")
         else:
-            confirm = input("Re-enter your password: ").strip()
-            if confirm != password:
-                print("❌ Passwords do not match. Try again.")
-            else:
-                break
+            break
 
-    # --- ROLE-SPECIFIC FIELDS ---
+    # --- AUTO-GENERATE UNIQUE ID ---
+    if role == "student":
+        user_id = generate_student_id()
+    else:
+        user_id = generate_teacher_id()
+
+    # --- VERIFY UNIQUE ID IN DB (safety check) ---
+    cursor.execute(
+        sql.SQL("SELECT 1 FROM {} WHERE {} = %s;").format(
+            sql.Identifier(table), sql.Identifier(id_column)
+        ),
+        [user_id],
+    )
+    if cursor.fetchone():
+        print("⚠️ Generated ID already exists — regenerating...")
+        user_id = generate_student_id() if role == "student" else generate_teacher_id()
+
+    # --- ROLE-SPECIFIC DETAILS ---
     if role == "student":
         while True:
             try:
@@ -91,7 +93,10 @@ def signup_screen(conn):
                 print("❌ Please enter a valid number for semester.")
 
         cursor.execute(
-            "INSERT INTO students (student_id, name, email, password, semester) VALUES (%s, %s, %s, %s, %s);",
+            """
+            INSERT INTO students (student_id, name, email, password, semester)
+            VALUES (%s, %s, %s, %s, %s);
+            """,
             (user_id, name, email, password, semester),
         )
 
@@ -103,7 +108,10 @@ def signup_screen(conn):
             print("❌ Department cannot be empty.")
 
         cursor.execute(
-            "INSERT INTO teachers (teacher_id, name, email, password, department) VALUES (%s, %s, %s, %s, %s);",
+            """
+            INSERT INTO teachers (teacher_id, name, email, password, department)
+            VALUES (%s, %s, %s, %s, %s);
+            """,
             (user_id, name, email, password, department),
         )
 
@@ -111,116 +119,12 @@ def signup_screen(conn):
     print(f"\n✅ {role.capitalize()} {name} registered successfully with ID: {user_id}")
     return user_id, password, role
 
-import re
-from psycopg2 import sql
 
-def signup_screen(conn):
-    cursor = conn.cursor()
-    print("\n=== Sign Up ===")
-
-    # --- ROLE SELECTION ---
-    while True:
-        role = input("Enter your role (student/teacher): ").strip().lower()
-        if role in ("student", "teacher"):
-            break
-        print("❌ Invalid role! Please enter either 'student' or 'teacher'.")
-
-    # --- UNIQUE NUMERIC ID ---
-    table = "students" if role == "student" else "teachers"
-    id_column = "student_id" if role == "student" else "teacher_id"
-
-    while True:
-        user_id = input("Enter a unique numeric ID: ").strip()
-        if not user_id.isdigit():
-            print("❌ ID must be numeric.")
-            continue
-
-        cursor.execute(
-            sql.SQL("SELECT 1 FROM {} WHERE {} = %s;").format(
-                sql.Identifier(table), sql.Identifier(id_column)
-            ),
-            [user_id],
-        )
-        if cursor.fetchone():
-            print("❌ That ID is already taken. Please choose another one.")
-        else:
-            break
-
-    # --- NAME ---
-    while True:
-        name = input("Enter your full name: ").strip()
-        if len(name) < 3:
-            print("❌ Name must be at least 3 characters long.")
-        else:
-            break
-
-    # --- EMAIL ---
-    while True:
-        email = input("Enter your email: ").strip().lower()
-        if not re.match(r"^[\w\.-]+@[\w\.-]+\.\w+$", email):
-            print("❌ Invalid email format.")
-            continue
-
-        cursor.execute(
-            sql.SQL("SELECT 1 FROM {} WHERE email = %s;").format(
-                sql.Identifier(table)
-            ),
-            [email],
-        )
-        if cursor.fetchone():
-            print("❌ That email is already registered. Try another.")
-        else:
-            break
-
-    # --- PASSWORD ---
-    while True:
-        password = input("Enter your password (min 6 chars): ").strip()
-        if len(password) < 6:
-            print("❌ Password must be at least 6 characters long.")
-        else:
-            confirm = input("Re-enter your password: ").strip()
-            if confirm != password:
-                print("❌ Passwords do not match. Try again.")
-            else:
-                break
-
-    # --- ROLE-SPECIFIC FIELDS ---
-    if role == "student":
-        while True:
-            try:
-                semester = int(input("Enter your current semester (1–4): ").strip())
-                if 1 <= semester <= 4:
-                    break
-                else:
-                    print("❌ Semester must be between 1 and 4.")
-            except ValueError:
-                print("❌ Please enter a valid number for semester.")
-
-        cursor.execute(
-            "INSERT INTO students (student_id, name, email, password, semester) VALUES (%s, %s, %s, %s, %s);",
-            (user_id, name, email, password, semester),
-        )
-
-    elif role == "teacher":
-        while True:
-            department = input("Enter your department: ").strip()
-            if department:
-                break
-            print("❌ Department cannot be empty.")
-
-        cursor.execute(
-            "INSERT INTO teachers (teacher_id, name, email, password, department) VALUES (%s, %s, %s, %s, %s);",
-            (user_id, name, email, password, department),
-        )
-
-    conn.commit()
-    print(f"\n✅ {role.capitalize()} {name} registered successfully with ID: {user_id}")
-    return user_id, password, role
-
-import re
-
+# ==============================
+#  LOGIN SCREEN
+# ==============================
 def login_screen(conn):
-    print("\n=== Login ===")
+    print("\n=== 🔐 Login ===")
     cursor = conn.cursor()
 
     # --- ROLE VALIDATION ---
@@ -267,26 +171,32 @@ def login_screen(conn):
             print("✅ Welcome Admin!")
             return 0, "admin"
 
-    # --- INVALID CREDENTIALS HANDLING ---
     print("❌ Invalid credentials or role. Please try again.\n")
     return None
 
+
+# ==============================
+#  ROLE ROUTER
+# ==============================
 def route_to_role(role, user_id):
     if role == "student":
         student_controller.student_menu(user_id)
     elif role == "teacher":
         teacher_controller.teacher_menu(user_id)
     elif role == "admin":
-        admin_controller.admin_menu(user_id)
+        dashboard.admin_menu(user_id)
     else:
         print("❌ Invalid role! Please restart the program.")
         sys.exit(1)
 
 
+# ==============================
+#  MAIN ENTRY POINT
+# ==============================
 def main():
     conn = connect_db()
 
-    print("\n=== Student Course and Performance Tracker ===")
+    print("\n=== 🎓 Student Course and Performance Tracker ===")
     choice = input("Do you want to (1) Login, (2) Sign Up, or (3) Exit? Enter 1, 2, or 3: ").strip()
     
     if choice == "3":
@@ -294,7 +204,7 @@ def main():
         conn.close()
         sys.exit(0)
 
-    if choice == "2":
+    elif choice == "2":
         signup_result = signup_screen(conn)
         if signup_result:
             user_id, password, role = signup_result

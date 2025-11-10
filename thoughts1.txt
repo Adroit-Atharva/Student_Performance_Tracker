@@ -21,9 +21,8 @@ admin:-
 
 teachers:-
     -view students records for their course
-    -see the trends of the students for their course
+    -see the trends of the students for their course, using graphs
     -download the records in pdf and exel formats or text file
-    -
 
 system:-
-    -automatically generate unique id's for the users during the signup
+    -automatically generate unique id's for the users(both teachers and students) during the signup

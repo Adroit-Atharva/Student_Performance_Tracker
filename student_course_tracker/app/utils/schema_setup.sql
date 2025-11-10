@@ -9,7 +9,7 @@ DROP TABLE IF EXISTS performance_records, enrollments, courses, teachers, studen
 -- 1. Students
 -- =====================
 CREATE TABLE students (
-    student_id SERIAL PRIMARY KEY,
+    student_id VARCHAR(20) PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
     email VARCHAR(100) UNIQUE NOT NULL,
     password VARCHAR(100) NOT NULL,
@@ -20,7 +20,7 @@ CREATE TABLE students (
 -- 2. Teachers
 -- =====================
 CREATE TABLE teachers (
-    teacher_id SERIAL PRIMARY KEY,
+    teacher_id VARCHAR(20) PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
     email VARCHAR(100) UNIQUE NOT NULL,
     password VARCHAR(100) NOT NULL,
@@ -46,6 +46,7 @@ CREATE TABLE enrollments (
     student_id INT REFERENCES students(student_id) ON DELETE CASCADE,
     course_id INT REFERENCES courses(course_id) ON DELETE CASCADE,
     enrollment_date DATE DEFAULT CURRENT_DATE,
+    status VARCHAR(20) DEFAULT 'PENDING',
     is_approved BOOLEAN DEFAULT FALSE
 );
 
