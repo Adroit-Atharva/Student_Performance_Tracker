@@ -43,7 +43,7 @@ CREATE TABLE courses (
 -- =====================
 CREATE TABLE enrollments (
     enrollment_id SERIAL PRIMARY KEY,
-    student_id INT REFERENCES students(student_id) ON DELETE CASCADE,
+    student_id VARCHAR(20) REFERENCES students(student_id) ON DELETE CASCADE,
     course_id INT REFERENCES courses(course_id) ON DELETE CASCADE,
     enrollment_date DATE DEFAULT CURRENT_DATE,
     status VARCHAR(20) DEFAULT 'PENDING',
@@ -55,7 +55,7 @@ CREATE TABLE enrollments (
 -- =====================
 CREATE TABLE performance_records (
     record_id SERIAL PRIMARY KEY,
-    student_id INT REFERENCES students(student_id) ON DELETE CASCADE,
+    student_id VARCHAR(20) REFERENCES students(student_id) ON DELETE CASCADE,
     course_id INT REFERENCES courses(course_id) ON DELETE CASCADE,
     assignments_completed INT DEFAULT 0,
     assignment_marks FLOAT DEFAULT 0,
